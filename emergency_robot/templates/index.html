@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Emergency Robot HUD</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=no">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+    <img id="video" src="/video" alt="Live Stream">
+
+    <div id="hud">
+        <div id="mode-panel" onclick="toggleMode()">
+            MODE: <span id="mode-text" class="manual">MANUAL</span>
+        </div>
+
+        <div id="sensor-overlay">
+            <div class="sensor-item" id="stat-fire">🔥 FIRE: <span class="status-val">SAFE</span></div>
+            <div class="sensor-item" id="stat-gas">💨 GAS: <span class="status-val">NORMAL</span></div>
+            <div class="sensor-item" id="stat-vibe">🫨 SEISMIC: <span class="status-val">STABLE</span></div>
+            <div class="sensor-item" id="stat-audio">🔊 AUDIO: <span class="status-val">QUIET</span></div>
+        </div>
+
+        <div id="bottom-left-corner">
+            <div id="arrows">
+                <div class="arrow up">↑</div>
+                <div class="middle">
+                    <div class="arrow left">←</div>
+                    <div class="dot"></div>
+                    <div class="arrow right">→</div>
+                </div>
+                <div class="arrow down">↓</div>
+            </div>
+
+            <div id="action-bar">
+                <button class="action-btn" onclick="openMedKit()" title="Deploy Med Kit">🩹</button>
+                <button class="action-btn" id="light-btn" onclick="toggleLights()" title="Toggle Lights">🔦</button>
+                <button class="action-btn" id="record-btn" onclick="toggleRecording()" title="Record Video">⏺️</button>
+                <button class="action-btn police-btn" onclick="callPolice()" title="Emergency Alert">🚨</button>
+                <button class="action-btn shutdown-btn" onclick="systemShutdown()" title="Power Off System" style="border-color: #ff4444;">⚠️</button>
+            </div>
+        </div>
+
+        <div id="comms-wrapper">
+            <div id="comms-panel" class="hidden">
+                <input type="text" id="speaker-input" placeholder="Broadcast voice..." onkeypress="handleSpeak(event)">
+            </div>
+            <div id="menu-dots" onclick="toggleCommsPanel()">COMMS ⋮</div>
+        </div>
+    </div>
+
+    <div id="critical-alert" class="hidden">WARNING: VIOLENCE DETECTED</div>
+
+    <script src="/static/controls.js"></script>
+</body>
+</html>
