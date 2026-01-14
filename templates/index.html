@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Emergency Robot HUD</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=no">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+    <!-- LIVE CAMERA FEED -->
+    <img id="video" src="/video" alt="Live Stream">
+
+    <div id="hud">
+        <!-- MODE DISPLAY -->
+        <div id="mode-panel" onclick="toggleMode()">
+            MODE: <span id="mode-text" class="manual">MANUAL</span>
+        </div>
+
+        <!-- SENSOR OVERLAY -->
+        <div id="sensor-overlay">
+            <div class="sensor-item" id="stat-fire">🔥 FIRE: <span class="status-val">SAFE</span></div>
+            <div class="sensor-item" id="stat-gas">💨 GAS: <span class="status-val">NORMAL</span></div>
+            <div class="sensor-item" id="stat-vibe">🫨 SEISMIC: <span class="status-val">STABLE</span></div>
+            <div class="sensor-item" id="stat-audio">🔊 AUDIO: <span class="status-val">QUIET</span></div>
+        </div>
+
+        <!-- CONTROL ARROWS & ACTION BUTTONS -->
+        <div id="bottom-left-corner">
+            <div id="arrows">
+                <div class="arrow up" onclick="moveRobot('FORWARD')">↑</div>
+                <div class="middle">
+                    <div class="arrow left" onclick="moveRobot('LEFT')">←</div>
+                    <div class="dot"></div>
+                    <div class="arrow right" onclick="moveRobot('RIGHT')">→</div>
+                </div>
+                <div class="arrow down" onclick="moveRobot('BACK')">↓</div>
+            </div>
+
+            <div id="action-bar">
+                <button class="action-btn" onclick="openMedKit()" title="Deploy Med Kit">🩹</button>
+                <button class="action-btn" id="light-btn" onclick="toggleLights()" title="Toggle Lights">🔦</button>
+                <button class="action-btn" id="record-btn" onclick="toggleRecording()" title="Record Video">⏺️</button>
+                <button class="action-btn police-btn" onclick="callPolice()" title="Emergency Alert">🚨</button>
+                <button class="action-btn shutdown-btn" onclick="systemShutdown()" title="Power Off System" style="border-color: #ff4444;">⚠️</button>
+            </div>
+        </div>
+
+        <!-- COMMS PANEL -->
+        <div id="comms-wrapper">
+            <div id="comms-panel" class="hidden">
+                <input type="text" id="speaker-input" placeholder="Broadcast voice..." onkeypress="handleSpeak(event)">
+            </div>
+            <div id="menu-dots" onclick="toggleCommsPanel()">COMMS ⋮</div>
+        </div>
+    </div>
+
+    <!-- ALERTS -->
+    <div id="critical-alert" class="hidden">WARNING: EMERGENCY DETECTED</div>
+
+    <!-- JS CONTROLS -->
+    <script>
+        let recording = false;
+        let lightsOn = false;
+
+        // Toggle robot mode
+        function toggleMode() {
+            const modeText = document.getElementById('mode-text');
+            if (modeText.textContent === "MANUAL") {
+                modeText.textContent = "AUTO";
+                modeText.className = "auto";
+            } else {
+                modeText.textContent = "MANUAL";
+                modeText.className = "manual";
+            }
+        }
+
+        // Move robot
+        function moveRobot(direction) {
+            fetch('/move', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ move: direction })
+            });
+        }
+
+        // Deploy medkit
+        function openMedKit() {
+            fetch('/action', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: "MEDKIT" })
+            });
+        }
+
+        // Toggle lights
+        function toggleLights() {
+            lightsOn = !lightsOn;
+            const btn = document.getElementById('light-btn');
+            btn.textContent = lightsOn ? '💡' : '🔦';
+            fetch('/action', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: lightsOn ? "LIGHT_ON" : "LIGHT_OFF" })
+            });
+        }
+
+        // Toggle recording
+        function toggleRecording() {
+            recording = !recording;
+            const btn = document.getElementById('record-btn');
+            btn.textContent = recording ? '⏹️' : '⏺️';
+            fetch('/action', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: recording ? "RECORD_START" : "RECORD_STOP" })
+            });
+        }
+
+        // Emergency alert
+        function callPolice() {
+            fetch('/action', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: "ALERT" })
+            });
+            alert("Emergency Alert Sent!");
+        }
+
+        // Shutdown
+        function systemShutdown() {
+            fetch('/action', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: "SHUTDOWN" })
+            });
+        }
+
+        // Toggle COMMS panel
+        function toggleCommsPanel() {
+            const panel = document.getElementById('comms-panel');
+            panel.classList.toggle('hidden');
+        }
+
+        function handleSpeak(event) {
+            if (event.key === "Enter") {
+                const text = document.getElementById('speaker-input').value;
+                fetch('/action', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: "SPEAK", text: text })
+                });
+                document.getElementById('speaker-input').value = '';
+            }
+        }
+
+        // Update sensor overlay every second
+        setInterval(() => {
+            fetch('/sensor_data')
+                .then(resp => resp.json())
+                .then(data => {
+                    document.getElementById('stat-fire').querySelector('.status-val').textContent = data.fire_visual || data.fire_thermal ? "DANGER" : "SAFE";
+                    document.getElementById('stat-gas').querySelector('.status-val').textContent = data.gas_level > 60 ? "HIGH" : "NORMAL";
+                    document.getElementById('stat-vibe').querySelector('.status-val').textContent = data.vibration ? "ALERT" : "STABLE";
+                });
+        }, 1000);
+
+    </script>
+</body>
+</html>
